@@ -6,7 +6,14 @@ import {
   catalogHeadersFromPrevious,
   listingsHeadersFromPrevious,
 } from '../lib/carry.js';
-import { getActiveProducts, getActiveVersion, uploadRawFile, saveAndPublish, cleanupVersion } from '../lib/db.js';
+import {
+  db,
+  getActiveProducts,
+  getActiveVersion,
+  uploadRawFile,
+  saveAndPublish,
+  cleanupVersion,
+} from '../lib/db.js';
 
 function escapeHtml(s) {
   return String(s)
@@ -200,6 +207,7 @@ export function initUpload({ root, onChanged }) {
       resetAnalysis();
       summaryEl.innerHTML = '<p class="ok">Published. Data reloaded.</p>';
       await onChanged();
+      db.functions.invoke('mirror-images').catch(() => {});
     } catch (e) {
       await cleanupVersion(versionId, uploaded).catch(() => {});
       summaryEl.innerHTML = `<div class="panel errors"><b>Publish failed — nothing went live</b><p>${escapeHtml(e.message)}</p></div>`;

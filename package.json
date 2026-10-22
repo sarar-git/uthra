@@ -11,6 +11,7 @@
     "test:build": "node scripts/test-build.mjs",
     "test:grid": "node scripts/test-grid.mjs",
     "test:cache": "node scripts/test-cache.mjs",
+    "test:images": "node --env-file=.env scripts/test-images.mjs",
     "test:e2e": "node --env-file=.env scripts/test-e2e.mjs"
   },
   "dependencies": {

@@ -1,8 +1,26 @@
+import { SUPABASE_URL, BUCKETS } from '../config.js';
+
 const inr = new Intl.NumberFormat('en-IN', {
   style: 'currency',
   currency: 'INR',
   maximumFractionDigits: 0,
 });
+
+const publicUrlCache = new Map();
+
+function publicUrl(path) {
+  if (!publicUrlCache.has(path)) {
+    const encoded = path.split('/').map(encodeURIComponent).join('/');
+    publicUrlCache.set(path, `${SUPABASE_URL}/storage/v1/object/public/${BUCKETS.productImages}/${encoded}`);
+  }
+  return publicUrlCache.get(path);
+}
+
+function displaySrcs(p) {
+  const srcs = p.image_src ?? [];
+  const paths = p.image_paths ?? [];
+  return srcs.map((u, i) => (paths[i] ? publicUrl(paths[i]) : u)).filter(Boolean);
+}
 
 function formatINR(n) {
   return n == null ? '—' : inr.format(n);
@@ -175,7 +193,7 @@ export function initGrid({ tabsRoot, filtersRoot, gridRoot }) {
   }
 
   function cardHtml(p) {
-    const srcs = p.image_src ?? [];
+    const srcs = displaySrcs(p);
     const img = srcs.length
       ? `<img src="${esc(srcs[0])}" data-srcs="${esc(JSON.stringify(srcs))}" data-idx="0" loading="lazy" alt="" />`
       : '<div class="img-placeholder">No image</div>';

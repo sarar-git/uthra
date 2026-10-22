@@ -23,7 +23,7 @@ const grid = initGrid({ tabsRoot, filtersRoot, gridRoot });
 const products = [
   { fsn: 'F1', sku: 'S1', title: 'UTHRA Nighty Floral', brand: 'UTHRA', category: 'night_dress_nighty', sizes: ['L'], mrp: 400, selling_price: 380, settlement_price: 300, stock: 5, is_shopsy: false, status: 'new', image_src: [] },
   { fsn: 'F2', sku: 'S2', title: 'UTHRA Nighty Striped', brand: 'UTHRA', category: 'night_dress_nighty', sizes: ['XL'], mrp: 500, selling_price: 450, settlement_price: 350, stock: 0, is_shopsy: false, status: 'existing', image_src: [] },
-  { fsn: 'F3', sku: 'S3', title: 'KALKI Petticoat Black', brand: 'KALKI', category: 'petticoat', sizes: ['Free'], mrp: 300, selling_price: 250, settlement_price: 200, stock: 2, is_shopsy: true, status: 'new', image_src: [] },
+  { fsn: 'F3', sku: 'S3', title: 'KALKI Petticoat Black', brand: 'KALKI', category: 'petticoat', sizes: ['Free'], mrp: 300, selling_price: 250, settlement_price: 200, stock: 2, is_shopsy: true, status: 'new', image_src: ['https://img.fkcdn.com/x.jpeg'], image_paths: ['F3/0.jpg'] },
   { fsn: 'F4', sku: 'S4', title: 'HONEY Petticoat White', brand: 'HONEY', category: 'petticoat', sizes: ['M'], mrp: 280, selling_price: 240, settlement_price: 180, stock: 0, is_shopsy: true, status: 'inactive', image_src: [] },
   { fsn: 'F5', sku: 'S5', title: 'ROSE Nighty Cotton', brand: 'ROSE', category: 'night_dress_nighty', sizes: ['L'], mrp: 420, selling_price: 390, settlement_price: 310, stock: 9, is_shopsy: false, status: 'existing', image_src: [] },
   { fsn: 'F6', sku: 'S6', title: 'UTHRA Nightdress Silk', brand: 'UTHRA', category: 'night_dress_nighty', sizes: ['XXL'], mrp: 600, selling_price: 550, settlement_price: 400, stock: 1, is_shopsy: true, status: 'new', image_src: [] },
@@ -103,6 +103,10 @@ console.log('\n--- status badges ---');
 const html = gridRoot.innerHTML;
 check('New badge present', html.includes('st-new'));
 check('Inactive badge present', html.includes('st-inactive'));
+
+console.log('\n--- self-hosted image preferred ---');
+check('supabase image URL used when image_paths present', html.includes('/storage/v1/object/public/product-images/F3/0.jpg'));
+check('mirrored image no longer uses flipkart URL', !html.includes('https://img.fkcdn.com/x.jpeg'));
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nALL GRID CHECKS PASSED');
 process.exit(failures ? 1 : 0);

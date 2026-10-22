@@ -5,3 +5,4 @@ dist
 *.local
 samples/*.xlsx
 samples/*.xls
+supabase/.temp

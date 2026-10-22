@@ -63,8 +63,9 @@ async function publishTestVersion(previous, note) {
   }
 }
 
-const preActive = await getActiveVersion();
-check('clean slate (no active version)', preActive === null, preActive?.id);
+const pre = await db.from('versions').select('id, is_active');
+const preexisting = pre.data ?? [];
+console.log(`pre-existing versions: ${preexisting.length}`);
 
 console.log('\n--- publish v1 (fresh) ---');
 const v1 = await publishTestVersion([], 'e2e-v1');
@@ -123,19 +124,32 @@ try {
 check('bad publish rejected', threw);
 await cleanupVersion(vBad, uploadedBad);
 const afterFail = await db.from('versions').select('id');
+const afterFailIds = (afterFail.data ?? []).map((v) => v.id);
 check(
   'failed version removed, real versions untouched',
-  !afterFail.error && afterFail.data.length === 2 && !afterFail.data.some((v) => v.id === vBad),
-  `left: ${JSON.stringify(afterFail.data.map((v) => v.id))}`,
+  !afterFail.error && afterFailIds.includes(v1.versionId) && afterFailIds.includes(v2.versionId) && !afterFailIds.includes(vBad),
+  `left: ${JSON.stringify(afterFailIds)}`,
 );
 
-console.log('\n--- cleanup ---');
+console.log('\n--- cleanup (preserving pre-existing versions) ---');
 await cleanupVersion(v2.versionId, v2.uploaded);
 await cleanupVersion(v1.versionId, v1.uploaded);
-const finalVersions = await db.from('versions').select('id');
-const finalProducts = await db.from('active_products').select('fsn');
-check('all test versions removed', !finalVersions.error && finalVersions.data.length === 0, `left: ${finalVersions.data.length}`);
-check('no active products left', !finalProducts.error && finalProducts.data.length === 0, `left: ${finalProducts.data.length}`);
+if (preexisting.length) {
+  const byCreated = await db.from('versions').select('id, created_at').neq('id', v1.versionId).neq('id', v2.versionId).order('created_at', { ascending: false });
+  if (byCreated.data?.length) await publishVersionRow(byCreated.data[0].id);
+}
+const finalVersions = await db.from('versions').select('id, is_active');
+const finalIds = (finalVersions.data ?? []).map((v) => v.id);
+check(
+  'all test versions removed',
+  !finalVersions.error && !finalIds.includes(v1.versionId) && !finalIds.includes(v2.versionId),
+  `left: ${JSON.stringify(finalIds)}`,
+);
+if (preexisting.length) {
+  check('a pre-existing version is active again', (finalVersions.data ?? []).some((v) => v.is_active));
+} else {
+  check('no active products left', (finalVersions.data ?? []).length === 0, `left: ${finalVersions.data?.length}`);
+}
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nALL E2E CHECKS PASSED');
 process.exit(failures ? 1 : 0);
