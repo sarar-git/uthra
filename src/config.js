@@ -1,5 +1,10 @@
-export const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || '';
-export const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
+const env =
+  (typeof import.meta.env === 'object' && import.meta.env) ||
+  (typeof process !== 'undefined' ? process.env : {}) ||
+  {};
+
+export const SUPABASE_URL = env.VITE_SUPABASE_URL || '';
+export const SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY || '';
 
 export const BUCKETS = {
   rawUploads: 'raw-uploads',
