@@ -51,6 +51,18 @@ h3 {
   font-weight: 600;
 }
 
+/* ===== offline banner ===== */
+.banner {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
 /* ===== pinned tab bar ===== */
 .tabs {
   position: sticky;

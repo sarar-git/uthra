@@ -1,7 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_ANON_KEY, BUCKETS } from '../config.js';
 
-export const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let client;
+function getClient() {
+  if (!client) client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  return client;
+}
+
+export const db = new Proxy(
+  {},
+  {
+    get(_, prop) {
+      const c = getClient();
+      const v = c[prop];
+      return typeof v === 'function' ? v.bind(c) : v;
+    },
+  },
+);
 
 export async function getActiveVersion() {
   const { data, error } = await db.from('versions').select('*').eq('is_active', true).maybeSingle();

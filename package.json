@@ -10,6 +10,7 @@
     "inspect": "node scripts/inspect-samples.mjs",
     "test:build": "node scripts/test-build.mjs",
     "test:grid": "node scripts/test-grid.mjs",
+    "test:cache": "node scripts/test-cache.mjs",
     "test:e2e": "node --env-file=.env scripts/test-e2e.mjs"
   },
   "dependencies": {

@@ -96,6 +96,39 @@ await publishVersionRow(v2.versionId);
 const forward = await getActiveVersion();
 check('v2 active again', forward?.id === v2.versionId);
 
+console.log('\n--- failed publish leaves nothing behind ---');
+const badAnalysis = runAnalysis([]);
+badAnalysis.products[0] = { ...badAnalysis.products[0], status: 'bogus' };
+const vBad = crypto.randomUUID();
+const uploadedBad = [];
+let threw = false;
+try {
+  const cp = await uploadRawFile(vBad, 'catalog.xlsx', new Blob([catalogBuf]));
+  uploadedBad.push(cp);
+  const lp = await uploadRawFile(vBad, 'listings.xlsx', new Blob([listingsBuf]));
+  uploadedBad.push(lp);
+  await saveAndPublish({
+    versionId: vBad,
+    catalogPath: cp,
+    listingsPath: lp,
+    catalogRows: badAnalysis.report.catalogRows,
+    listingsRows: badAnalysis.report.listingsRows,
+    report: badAnalysis.report,
+    note: 'e2e-fail',
+    products: badAnalysis.products,
+  });
+} catch {
+  threw = true;
+}
+check('bad publish rejected', threw);
+await cleanupVersion(vBad, uploadedBad);
+const afterFail = await db.from('versions').select('id');
+check(
+  'failed version removed, real versions untouched',
+  !afterFail.error && afterFail.data.length === 2 && !afterFail.data.some((v) => v.id === vBad),
+  `left: ${JSON.stringify(afterFail.data.map((v) => v.id))}`,
+);
+
 console.log('\n--- cleanup ---');
 await cleanupVersion(v2.versionId, v2.uploaded);
 await cleanupVersion(v1.versionId, v1.uploaded);
