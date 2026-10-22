@@ -6,3 +6,4 @@ dist
 samples/*.xlsx
 samples/*.xls
 supabase/.temp
+.vercel
