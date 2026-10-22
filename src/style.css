@@ -310,6 +310,48 @@ button.ghost {
 .settle {
   font-size: 13px;
   color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.edit-settle {
+  border: 0;
+  background: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 13px;
+}
+
+.edit-settle:hover {
+  color: #2874f0;
+}
+
+.settle-input {
+  width: 90px;
+  padding: 4px 6px;
+  border: 1px solid #c7ccd3;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.save-settle,
+.cancel-settle {
+  padding: 3px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  border: 1px solid #c7ccd3;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+}
+
+.save-settle {
+  background: #2874f0;
+  border-color: #2874f0;
+  color: #fff;
 }
 
 /* ===== upload + versions ===== */

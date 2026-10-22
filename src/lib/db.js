@@ -41,6 +41,24 @@ export async function publishVersionRow(id) {
   if (error) throw new Error(error.message);
 }
 
+export async function updateSettlementPrice(fsn, settlementPrice) {
+  const { data: version, error: vErr } = await db
+    .from('versions')
+    .select('id')
+    .eq('is_active', true)
+    .maybeSingle();
+  if (vErr) throw new Error(vErr.message);
+  if (!version) throw new Error('No active version');
+  const { data, error } = await db
+    .from('products')
+    .update({ settlement_price: settlementPrice })
+    .eq('version_id', version.id)
+    .eq('fsn', fsn)
+    .select('fsn');
+  if (error) throw new Error(error.message);
+  if (!data?.length) throw new Error(`FSN ${fsn} not found in the active version`);
+}
+
 export async function uploadRawFile(versionId, name, file) {
   const path = `${versionId}/${name}`;
   const { error } = await db.storage

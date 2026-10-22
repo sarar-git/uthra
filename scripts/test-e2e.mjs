@@ -11,6 +11,7 @@ import {
   uploadRawFile,
   saveAndPublish,
   publishVersionRow,
+  updateSettlementPrice,
   cleanupVersion,
 } from '../src/lib/db.js';
 
@@ -87,15 +88,33 @@ const productsV2 = await getActiveProducts();
 check('v2 is active', afterV2?.id === v2.versionId);
 check('147 products, all existing', productsV2.length === 147 && productsV2.every((p) => p.status === 'existing'));
 
+console.log('\n--- settlement edit on active version ---');
+const editFsn = productsV2[0].fsn;
+const originalSettlement = productsV2[0].settlement_price;
+await updateSettlementPrice(editFsn, 999);
+const afterEdit = await getActiveProducts();
+check('settlement updated in DB', afterEdit.find((p) => p.fsn === editFsn)?.settlement_price === 999);
+
 console.log('\n--- rollback to v1 ---');
 await publishVersionRow(v1.versionId);
 const rolledBack = await getActiveVersion();
 check('v1 active again after rollback', rolledBack?.id === v1.versionId);
+const rolledBackProducts = await getActiveProducts();
+check(
+  'v1 shows original settlement (edit lives on v2 only)',
+  rolledBackProducts.find((p) => p.fsn === editFsn)?.settlement_price === originalSettlement,
+  `got ${rolledBackProducts.find((p) => p.fsn === editFsn)?.settlement_price}, expected ${originalSettlement}`,
+);
 
 console.log('\n--- forward to v2 again ---');
 await publishVersionRow(v2.versionId);
 const forward = await getActiveVersion();
 check('v2 active again', forward?.id === v2.versionId);
+const forwardProducts = await getActiveProducts();
+check(
+  'edit persisted on v2 row (direct-edit semantics)',
+  forwardProducts.find((p) => p.fsn === editFsn)?.settlement_price === 999,
+);
 
 console.log('\n--- failed publish leaves nothing behind ---');
 const badAnalysis = runAnalysis([]);

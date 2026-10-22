@@ -18,7 +18,7 @@ const tabsRoot = document.querySelector('#tabs');
 const filtersRoot = document.querySelector('#filters');
 const gridRoot = document.querySelector('#grid');
 
-const grid = initGrid({ tabsRoot, filtersRoot, gridRoot });
+const grid = initGrid({ tabsRoot, filtersRoot, gridRoot, saveSettlement: async () => {} });
 
 const products = [
   { fsn: 'F1', sku: 'S1', title: 'UTHRA Nighty Floral', brand: 'UTHRA', category: 'night_dress_nighty', sizes: ['L'], mrp: 400, selling_price: 380, settlement_price: 300, stock: 5, is_shopsy: false, status: 'new', image_src: [] },
@@ -107,6 +107,36 @@ check('Inactive badge present', html.includes('st-inactive'));
 console.log('\n--- self-hosted image preferred ---');
 check('supabase image URL used when image_paths present', html.includes('/storage/v1/object/public/product-images/F3/0.jpg'));
 check('mirrored image no longer uses flipkart URL', !html.includes('https://img.fkcdn.com/x.jpeg'));
+
+console.log('\n--- settlement price editing ---');
+{
+  const saved = [];
+  const grid2 = initGrid({
+    tabsRoot,
+    filtersRoot,
+    gridRoot,
+    saveSettlement: async (fsn, v) => saved.push([fsn, v]),
+  });
+  grid2.update(products);
+
+  const settleRow = () => gridRoot.querySelector('.settle[data-fsn="F1"]');
+  check('edit button present on active card', Boolean(settleRow().querySelector('.edit-settle')));
+  check('no edit button on inactive card', !gridRoot.querySelector('.settle[data-fsn="F4"] .edit-settle'));
+
+  settleRow().querySelector('.edit-settle').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  check('input replaces value on edit', Boolean(settleRow().querySelector('.settle-input')));
+  check('input starts at current value', settleRow().querySelector('.settle-input').value === '300');
+
+  settleRow().querySelector('.cancel-settle').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  check('cancel restores display', settleRow().textContent.includes('₹300') && !settleRow().querySelector('.settle-input'));
+
+  settleRow().querySelector('.edit-settle').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  settleRow().querySelector('.settle-input').value = '321';
+  settleRow().querySelector('.save-settle').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 0));
+  check('save called with new value', saved.length === 1 && saved[0][0] === 'F1' && saved[0][1] === 321, JSON.stringify(saved));
+  check('card shows updated value', settleRow().textContent.includes('₹321'));
+}
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nALL GRID CHECKS PASSED');
 process.exit(failures ? 1 : 0);

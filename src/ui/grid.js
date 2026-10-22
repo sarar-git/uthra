@@ -1,4 +1,5 @@
 import { SUPABASE_URL, BUCKETS } from '../config.js';
+import { updateSettlementPrice } from '../lib/db.js';
 
 const inr = new Intl.NumberFormat('en-IN', {
   style: 'currency',
@@ -41,7 +42,7 @@ function esc(s) {
     .replaceAll('"', '&quot;');
 }
 
-export function initGrid({ tabsRoot, filtersRoot, gridRoot }) {
+export function initGrid({ tabsRoot, filtersRoot, gridRoot, saveSettlement = updateSettlementPrice }) {
   let products = [];
   const state = {
     tab: 'all',
@@ -158,6 +159,56 @@ export function initGrid({ tabsRoot, filtersRoot, gridRoot }) {
     img.dataset.hovering = '0';
   });
 
+  cardsEl.addEventListener('click', async (e) => {
+    const editBtn = e.target.closest('.edit-settle');
+    if (editBtn) {
+      const wrap = editBtn.closest('.settle');
+      const p = products.find((x) => x.fsn === wrap.dataset.fsn);
+      if (!p) return;
+      wrap.innerHTML = `₹ <input type="number" min="0" step="any" class="settle-input" value="${p.settlement_price ?? ''}" /> <button type="button" class="save-settle">Save</button> <button type="button" class="cancel-settle">Cancel</button>`;
+      const input = wrap.querySelector('.settle-input');
+      input.focus();
+      input.select();
+      return;
+    }
+
+    if (e.target.closest('.cancel-settle')) {
+      apply();
+      return;
+    }
+
+    const saveBtn = e.target.closest('.save-settle');
+    if (saveBtn) {
+      const wrap = saveBtn.closest('.settle');
+      const fsn = wrap.dataset.fsn;
+      const value = Number(wrap.querySelector('.settle-input').value);
+      if (!Number.isFinite(value) || value < 0) {
+        alert('Enter a valid settlement price');
+        return;
+      }
+      saveBtn.disabled = true;
+      try {
+        await saveSettlement(fsn, value);
+        const p = products.find((x) => x.fsn === fsn);
+        if (p) p.settlement_price = value;
+        apply();
+      } catch (err) {
+        alert(`Save failed: ${err.message}`);
+        saveBtn.disabled = false;
+      }
+    }
+  });
+
+  cardsEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.classList?.contains('settle-input')) {
+      e.preventDefault();
+      e.target.closest('.settle').querySelector('.save-settle')?.click();
+    }
+    if (e.key === 'Escape' && e.target.classList?.contains('settle-input')) {
+      apply();
+    }
+  });
+
   function toggle(set, v) {
     if (set.has(v)) set.delete(v);
     else set.add(v);
@@ -223,7 +274,11 @@ export function initGrid({ tabsRoot, filtersRoot, gridRoot }) {
             <span class="mrp">${formatINR(p.mrp)}</span>
             <span class="selling">${formatINR(p.selling_price)}</span>
           </div>
-          <div class="settle">Bank settlement <b>${formatINR(p.settlement_price)}</b></div>
+          <div class="settle" data-fsn="${esc(p.fsn)}">Bank settlement <b class="settle-value">${formatINR(p.settlement_price)}</b>${
+            p.status === 'inactive'
+              ? ''
+              : '<button type="button" class="edit-settle" title="Edit settlement price" aria-label="Edit settlement price">✎</button>'
+          }</div>
         </div>
       </article>`;
   }
